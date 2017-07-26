@@ -1,0 +1,8 @@
+#!/bin/bash
+# Preserves everything as-is.
+
+# Usage: $ remux <input> <output>
+# Example:
+# $ remux 00003.m2ts filename.mkv
+
+ffmpeg -i $1 -c:v copy -c:a copy -c:s copy -map 0 $2

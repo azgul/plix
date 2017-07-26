@@ -1,0 +1,199 @@
+version: '2'
+
+services:
+  hydra:
+    image: linuxserver/hydra
+    container_name: hydra
+    ports:
+    - 5075:5075
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/hydra:/config
+    - ${NZBGET_PATH}:/downloads
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=hydra"
+    - "traefik.frontend.rule=Host:hydra.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  plexpy:
+    image: linuxserver/plexpy
+    container_name: plexpy
+    ports:
+    - 8181:8181
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/plexpy:/config
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=plexpy"
+    - "traefik.frontend.rule=Host:plexpy.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    ports:
+    - 3579:3579
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/ombi:/config
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=ombi"
+    - "traefik.frontend.rule=Host:request.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  nzbget:
+    image: linuxserver/nzbget
+    container_name: nzbget
+    ports:
+    - 6789:6789
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/nzbget:/config
+    - ${NZBGET_PATH}:/downloads
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=nzbget"
+    - "traefik.frontend.rule=Host:nzbget.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  deluge:
+    image: linuxserver/deluge
+    container_name: deluge
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/deluge:/config
+    - ${TORRENT_PATH}:/downloads
+    - ${TORRENT_PATH}:/torrents
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=deluge"
+    - "traefik.frontend.rule=Host:deluge.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    network_mode: host
+    restart: always
+
+  sonarr:
+    image: linuxserver/sonarr
+    container_name: sonarr
+    ports:
+    - 8989:8989
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/sonarr:/config
+    - ${TV_PATH}:/tv
+    - ${NZBGET_PATH}:/downloads
+    - ${TORRENT_PATH}:/torrents
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=sonarr"
+    - "traefik.frontend.rule=Host:sonarr.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  sonarr-4k:
+    image: linuxserver/sonarr
+    container_name: sonarr4k
+    ports:
+    - 8990:8989
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/sonarr-4k:/config
+    - ${TV_4K_PATH}:/tv
+    - ${NZBGET_PATH}:/downloads
+    - ${TORRENT_PATH}:/torrents
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=sonarr-4k"
+    - "traefik.frontend.rule=Host:sonarr4k.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    ports:
+    - 7878:7878
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/radarr:/config
+    - ${MOVIES_PATH}:/movies
+    - ${NZBGET_PATH}:/downloads
+    - ${TORRENT_PATH}:/torrents
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=radarr"
+    - "traefik.frontend.rule=Host:radarr.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  radarr-4k:
+    image: linuxserver/radarr
+    container_name: radarr4k
+    ports:
+    - 7879:7878
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ${CONTAINERS_PATH}/radarr-4k:/config
+    - ${MOVIES_4K_PATH}:/movies
+    - ${NZBGET_PATH}:/downloads
+    - ${TORRENT_PATH}:/torrents
+    env_file: .env
+    labels:
+    - "traefik.enable=true"
+    - "traefik.backend=radarr-4k"
+    - "traefik.frontend.rule=Host:radarr4k.${DOMAIN}"
+    - "traefik.docker.network=reverseproxy_default"
+    networks:
+    - proxy
+    restart: always
+
+  logrotate:
+    image: blacklabelops/logrotate
+    container_name: logrotate
+    volumes:
+    - /var/lib/docker/containers:/var/lib/docker/containers
+    - /var/log/docker:/var/log/docker
+    environment:
+    - LOGS_DIRECTORIES=/var/lib/docker/containers /var/log/docker
+    - LOGROTATE_INTERVAL=daily
+
+  watchtower:
+    image: v2tec/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
+
+networks:
+  proxy:
+    external:
+      name: reverseproxy_default
